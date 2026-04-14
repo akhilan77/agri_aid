@@ -6,6 +6,7 @@ dist/
 __pycache__/
 
 # ML models (ignore heavy files)
-ml/models/*
 *.h5
 *.npy
+!ml/models/*.h5
+!ml/models/*.npy
