@@ -4,8 +4,8 @@ from fastapi.responses import JSONResponse
 from PIL import Image
 from io import BytesIO
 from fastapi.middleware.cors import CORSMiddleware
-from services.predict import predict_image
-from services.disease_info import disease_info
+from backend.services.predict import predict_image
+from backend.services.disease_info import disease_info
 
 app = FastAPI()
 
