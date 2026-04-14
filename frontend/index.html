@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AgriAid AI</title>
+</head>
+<body>
+
+<h2>Plant Disease Detection</h2>
+
+<input type="file" id="imageInput">
+<br><br>
+<button onclick="uploadImage()">Predict</button>
+
+<pre id="result"></pre>
+
+<script>
+async function uploadImage() {
+    try {
+        const fileInput = document.getElementById('imageInput');
+
+        if (!fileInput.files.length) {
+            alert("Please select an image");
+            return;
+        }
+
+        const file = fileInput.files[0];
+
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const response = await fetch("http://127.0.0.1:8000/predict", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        document.getElementById("result").textContent =
+            `Disease: ${data.disease}
+Confidence: ${data.confidence}`;
+
+    } catch (error) {
+        console.error(error);
+        document.getElementById("result").textContent =
+            "Error: " + error.message;
+    }
+}
+</script>
+
+</body>
+</html>

@@ -3,12 +3,19 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 from io import BytesIO
-
+from fastapi.middleware.cors import CORSMiddleware
 from services.predict import predict_image
 from services.disease_info import disease_info
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 async def health_check():
