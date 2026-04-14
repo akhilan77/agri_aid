@@ -1,51 +1,165 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
+  <head>
     <title>AgriAid AI</title>
-</head>
-<body>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f7f5;
+        margin: 0;
+        padding: 0;
+      }
 
-<h2>Plant Disease Detection</h2>
+      .container {
+        max-width: 600px;
+        margin: 40px auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      }
 
-<input type="file" id="imageInput">
-<br><br>
-<button onclick="uploadImage()">Predict</button>
+      h1 {
+        text-align: center;
+        color: #2e7d32;
+      }
 
-<pre id="result"></pre>
+      .section {
+        margin-top: 20px;
+      }
 
-<script>
-async function uploadImage() {
-    try {
+      button {
+        background-color: #2e7d32;
+        color: white;
+        padding: 12px;
+        border: none;
+        width: 100%;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+
+      button:hover {
+        background-color: #256628;
+      }
+
+      #preview {
+        width: 100%;
+        margin-top: 10px;
+        border-radius: 8px;
+      }
+
+      .result-box {
+        background: #f0f8f2;
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 15px;
+      }
+
+      .title {
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .loading {
+        text-align: center;
+        color: #888;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>🌱 AgriAid</h1>
+
+      <!-- Upload Section -->
+      <div class="section">
+        <div class="title">Upload plant leaf image</div>
+        <input type="file" id="imageInput" onchange="previewImage()" />
+        <button onclick="uploadImage()">Check Plant</button>
+      </div>
+
+      <!-- Image Preview -->
+      <div class="section">
+        <img id="preview" src="" style="display: none" />
+      </div>
+
+      <!-- Loading -->
+      <div id="loading" class="loading"></div>
+
+      <!-- Result -->
+      <div id="result" class="section"></div>
+    </div>
+
+    <script>
+      function previewImage() {
+        const file = document.getElementById('imageInput').files[0];
+        const preview = document.getElementById('preview');
+
+        if (file) {
+          preview.src = URL.createObjectURL(file);
+          preview.style.display = 'block';
+        }
+      }
+
+      async function uploadImage() {
         const fileInput = document.getElementById('imageInput');
+        const resultDiv = document.getElementById('result');
+        const loadingDiv = document.getElementById('loading');
 
         if (!fileInput.files.length) {
-            alert("Please select an image");
-            return;
+          alert('Please select an image');
+          return;
         }
 
+        loadingDiv.textContent = 'Analyzing plant...';
+        resultDiv.innerHTML = '';
+
         const file = fileInput.files[0];
-
         const formData = new FormData();
-        formData.append("image", file);
+        formData.append('image', file);
 
-        const response = await fetch("http://127.0.0.1:8000/predict", {
-            method: "POST",
-            body: formData
-        });
+        try {
+          const response = await fetch('http://127.0.0.1:8000/predict', {
+            method: 'POST',
+            body: formData,
+          });
 
-        const data = await response.json();
+          const data = await response.json();
+          loadingDiv.textContent = '';
 
-        document.getElementById("result").textContent =
-            `Disease: ${data.disease}
-Confidence: ${data.confidence}`;
+          if (data.error) {
+            resultDiv.innerHTML = `<div class="result-box">⚠ ${data.error}</div>`;
+            return;
+          }
 
-    } catch (error) {
-        console.error(error);
-        document.getElementById("result").textContent =
-            "Error: " + error.message;
-    }
-}
-</script>
+          // Confidence text
+          let confidenceText = 'Low confidence';
+          if (data.confidence > 0.8) confidenceText = 'High confidence';
+          else if (data.confidence > 0.5) confidenceText = 'Medium confidence';
 
-</body>
+          resultDiv.innerHTML = `
+            <div class="result-box">
+                <div class="title">🔍 Problem Found</div>
+                <div>${data.disease || 'Unknown'}</div>
+                <div><i>${confidenceText}</i></div>
+            </div>
+
+            <div class="result-box">
+                <div class="title">✅ What to do</div>
+                <ul>${(data.treatments || []).map((t) => `<li>${t}</li>`).join('')}</ul>
+            </div>
+
+            <div class="result-box">
+                <div class="title">🛡 Prevention</div>
+                <ul>${(data.prevention || []).map((p) => `<li>${p}</li>`).join('')}</ul>
+            </div>
+        `;
+        } catch (error) {
+          loadingDiv.textContent = '';
+          resultDiv.innerHTML = `<div class="result-box">Error: ${error.message}</div>`;
+        }
+      }
+    </script>
+  </body>
 </html>
