@@ -43,6 +43,11 @@
         background-color: #256628;
       }
 
+      button:disabled {
+        background-color: #90a4ae;
+        cursor: not-allowed;
+      }
+
       #preview {
         width: 100%;
         margin-top: 10px;
@@ -75,8 +80,8 @@
       <!-- Upload Section -->
       <div class="section">
         <div class="title">Upload plant leaf image</div>
-        <input type="file" id="imageInput" onchange="previewImage()" />
-        <button onclick="uploadImage()">Check Plant</button>
+        <input type="file" id="imageInput" accept="image/*" onchange="previewImage()" />
+        <button id="predictButton" onclick="uploadImage()">Check Plant</button>
       </div>
 
       <!-- Image Preview -->
@@ -92,6 +97,8 @@
     </div>
 
     <script>
+      const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000';
+      const API_BASE_URL = (window.API_BASE_URL || DEFAULT_API_BASE_URL).replace(/\/+$/, '');
       function previewImage() {
         const file = document.getElementById('imageInput').files[0];
         const preview = document.getElementById('preview');
@@ -106,6 +113,7 @@
         const fileInput = document.getElementById('imageInput');
         const resultDiv = document.getElementById('result');
         const loadingDiv = document.getElementById('loading');
+        const predictButton = document.getElementById('predictButton');
 
         if (!fileInput.files.length) {
           alert('Please select an image');
@@ -114,19 +122,25 @@
 
         loadingDiv.textContent = 'Analyzing plant...';
         resultDiv.innerHTML = '';
+        predictButton.disabled = true;
 
         const file = fileInput.files[0];
         const formData = new FormData();
         formData.append('image', file);
 
         try {
-          const response = await fetch('http://127.0.0.1:8000/predict', {
+          const response = await fetch(`${API_BASE_URL}/predict`, {
             method: 'POST',
             body: formData,
           });
 
           const data = await response.json();
           loadingDiv.textContent = '';
+          if (!response.ok) {
+            const errorMessage = data?.error || `Request failed (${response.status})`;
+            resultDiv.innerHTML = `<div class="result-box">⚠ ${errorMessage}</div>`;
+            return;
+          }
 
           if (data.error) {
             resultDiv.innerHTML = `<div class="result-box">⚠ ${data.error}</div>`;
@@ -137,12 +151,13 @@
           let confidenceText = 'Low confidence';
           if (data.confidence > 0.8) confidenceText = 'High confidence';
           else if (data.confidence > 0.5) confidenceText = 'Medium confidence';
+          const confidencePercentage = `${(Number(data.confidence || 0) * 100).toFixed(2)}%`;
 
           resultDiv.innerHTML = `
             <div class="result-box">
                 <div class="title">🔍 Problem Found</div>
                 <div>${data.disease || 'Unknown'}</div>
-                <div><i>${confidenceText}</i></div>
+                <div><i>${confidenceText} (${confidencePercentage})</i></div>
             </div>
 
             <div class="result-box">
@@ -158,6 +173,8 @@
         } catch (error) {
           loadingDiv.textContent = '';
           resultDiv.innerHTML = `<div class="result-box">Error: ${error.message}</div>`;
+        } finally {
+          predictButton.disabled = false;
         }
       }
     </script>

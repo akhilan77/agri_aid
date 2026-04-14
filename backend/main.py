@@ -29,10 +29,9 @@ async def predict(image: UploadFile = File(...)):
         image_bytes = await image.read()
         pil_image = Image.open(BytesIO(image_bytes)).convert("RGB")
 
-        # Preprocess
+        # Resize for model input (actual normalization is handled in predict_image)
         pil_image = pil_image.resize((224, 224))
-        image_np = np.array(pil_image, dtype=np.float32) / 255.0
-        image_np = np.expand_dims(image_np, axis=0)
+        image_np = np.array(pil_image, dtype=np.float32)
 
         # Model prediction
         result = predict_image(image_np)
