@@ -2,4 +2,10 @@ node_modules/
 .vscode/
 .env
 dist/
+
 __pycache__/
+
+# ML models (ignore heavy files)
+ml/models/*
+*.h5
+*.npy
